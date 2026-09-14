@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>間違い探し - イージー</title>
+<style>
+body{
+    margin:0;
+    background:black;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+#game{
+    position:relative;
+}
+canvas{
+    width:1280px;
+    height:720px;
+}
+#timer{
+    position:absolute;
+    top:20px;
+    left:20px;
+    color:white;
+    font-size:50px;
+    font-weight:bold;
+    text-shadow: 0 0 10px black;
+    z-index:10;
+    line-height: 1.2;
+}
+#overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1280px;
+    height: 720px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+    z-index: 20;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+#overlay img {
+    width: 300px;
+    height: 300px;
+}
+</style>
+</head>
+<body>
+<div id="game">
+    <canvas id="canvas" width="1280" height="720"></canvas>
+    <div id="timer">80</div>
+    <div id="overlay">
+        <img id="result-img" src="" alt="演出画像">
+    </div>
+</div>
+
+<script>
+const series = [
+    {
+        name:"iwakisan",
+        time:55,
+        answer:{ x:241, y:108, width:744, height:175 },
+        images:[
+            "easy/iwakisan1.jpg", 
+            "easy/iwakisan2.jpg", 
+            "easy/iwakisan3.jpg", 
+            "easy/iwakisan4.jpg",
+            "easy/iwakisan5.jpg", 
+            "easy/iwakisan6.jpg", 
+            "easy/iwakisan7.jpg", 
+            "easy/iwakisan8.jpg",
+            "easy/iwakisan9.jpg", 
+            "easy/iwakisan10.jpg", 
+            "easy/iwakisan11.jpg"
+        ]
+    },
+    {
+        name:"iwakiyamajinjya",
+        time:50,
+        answer:{ x:467, y:448, width:794, height:153 },
+        images:[
+            "easy/iwakiyamajinjya1.jpg", 
+            "easy/iwakiyamajinjya2.jpg", 
+            "easy/iwakiyamajinjya3.jpg",
+            "easy/iwakiyamajinjya4.jpg", 
+            "easy/iwakiyamajinjya5.jpg", 
+            "easy/iwakiyamajinjya6.jpg",
+            "easy/iwakiyamajinjya7.jpg", 
+            "easy/iwakiyamajinjya8.jpg", 
+            "easy/iwakiyamajinjya9.jpg",
+            "easy/iwakiyamajinjya10.jpg"
+        ]
+    },
+    {
+        name:"yoruhirosakijou",
+        time:55,
+        answer:{ x:1, y:506, width:1277, height:212 },
+        images:[
+            "easy/yoruhirosakijou0.jpg", 
+            "easy/yoruhirosakijou1.jpg", 
+            "easy/yoruhirosakijou2.jpg",
+            "easy/yoruhirosakijou3.jpg", 
+            "easy/yoruhirosakijou4.jpg", 
+            "easy/yoruhirosakijou5.jpg",
+            "easy/yoruhirosakijou6.jpg", 
+            "easy/yoruhirosakijou7.jpg", 
+            "easy/yoruhirosakijou8.jpg",
+            "easy/yoruhirosakijou9.jpg", 
+            "easy/yoruhirosakijou10.jpg"
+        ]
+    },
+    {
+        name:"lightswordsabun",
+        time:50,
+        answer:{
+            x:319,
+            y:36,
+            width:689,                      //ok
+            height:61
+        },
+        images:[
+            "easy/lightswordsabun0.jpg",
+            "easy/lightswordsabun1.jpg",
+            "easy/lightswordsabun2.jpg",
+            "easy/lightswordsabun3.jpg",
+            "easy/lightswordsabun4.jpg",
+            "easy/lightswordsabun5.jpg",
+            "easy/lightswordsabun6.jpg",
+            "easy/lightswordsabun7.jpg",
+            "easy/lightswordsabun8.jpg",
+            "easy/lightswordsabun9.jpg",
+        ]
+    }
+];
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const timer = document.getElementById("timer");
+const overlay = document.getElementById("overlay");
+const resultImg = document.getElementById("result-img");
+
+// 効果音用の音声オブジェクトを作成
+const correctSound = new Audio("sounds/correct.mp3");
+const incorrectSound = new Audio("sounds/incorrect.mp3");
+
+// ブラウザの設定から音声設定を取得
+const audioSetting = localStorage.getItem("audioSetting") || "on";
+const isAudioOn = (audioSetting === "on");
+
+let currentAnswer = null;
+let isCorrect = false;      
+let isAnimating = false;    
+let scoreTimes = []; 
+let isGameOver = false;     // ゲーム終了フラグ       
+
+function showResultEffect(isMaru) {
+    return new Promise(resolve => {
+        isAnimating = true;
+        resultImg.src = isMaru ? "UIimages/maru.png" : "UIimages/batsu.png";
+        
+        // 音声ONのときだけ効果音を再生
+        if (isAudioOn) {
+            const sound = isMaru ? correctSound : incorrectSound;
+            sound.currentTime = 0;
+            sound.play().catch(e => console.log("音声再生エラー:", e));
+        }
+
+        overlay.style.opacity = "1";
+        
+        setTimeout(() => {
+            overlay.style.opacity = "0";
+            setTimeout(() => {
+                isAnimating = false;
+                resolve();
+            }, 200);
+        }, 300);
+    });
+}
+
+function wait(ms){
+    return new Promise(resolve => {
+        const timeout = setTimeout(() => {
+            clearInterval(checkInterval);
+            resolve();
+        }, ms);
+        
+        const checkInterval = setInterval(() => {
+            if (isCorrect) {
+                clearTimeout(timeout);
+                clearInterval(checkInterval);
+                resolve();
+            }
+        }, 30);
+    });
+}
+
+function loadImage(src){
+    return new Promise(resolve=>{
+        const img = new Image();
+        img.onload = ()=> resolve(img);
+        img.src = src;
+    });
+}
+
+function drawImage(img){
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.globalAlpha = 1;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+}
+
+async function playSeries(data){
+    currentAnswer = data.answer;
+    isCorrect = false; 
+    let remain = data.time;
+    let timeUp = false;
+    timer.textContent = remain;
+    
+    const startTime = Date.now();
+
+    const timerID = setInterval(()=>{
+        if(isCorrect) {
+            clearInterval(timerID);
+            return;
+        }
+        
+        remain--;
+        timer.textContent = remain;
+        if(remain <= 0){
+            timeUp = true;
+            clearInterval(timerID);
+        }
+    },1000);
+
+    let current = await loadImage(data.images[0]);
+    drawImage(current);
+    await wait(2000);
+    
+    for(let i=1; i<data.images.length; i++){
+        if(timeUp || isCorrect) break;
+
+        let next = await loadImage(data.images[i]);
+        for(let a=0; a<=100; a++){
+            if(isCorrect) break;
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.globalAlpha = 1;
+            ctx.drawImage(current, 0, 0, canvas.width, canvas.height);
+            ctx.globalAlpha = a/100;
+            ctx.drawImage(next, 0, 0, canvas.width, canvas.height);
+            await wait(30);
+        }
+        current = next;
+        await wait(2000);
+    }
+    clearInterval(timerID);
+
+    if(isCorrect) {
+        const elapsedTime = (Date.now() - startTime) / 1000;
+        scoreTimes.push(elapsedTime);
+    }
+}
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+async function startGame(){
+    scoreTimes = [];
+    shuffleArray(series);
+    const selectedSeries = series.slice(0, 10);
+    for(const data of selectedSeries){
+        await playSeries(data);
+    }
+
+    if(scoreTimes.length > 0) {
+        const totalTime = scoreTimes.reduce((sum, time) => sum + time, 0);
+        const avgTime = totalTime / scoreTimes.length;
+        
+        let rank = "C";
+        if(avgTime <= 15) {
+            rank = "S";
+        } else if(avgTime <= 25) {
+            rank = "A";
+        } else if(avgTime <= 35) {
+            rank = "B";
+        }
+        
+        // 終了時のスコア・ランク計算部分
+        timer.innerHTML = `終了！<br>平均: ${avgTime.toFixed(1)}秒<br>評価: ${rank}<br><span style="font-size:20px; color:#aaa;">(画面タップで選択画面へ戻る)</span>`;
+        timer.style.fontSize = "32px";
+    } else {
+        timer.innerHTML = `終了 (正解なし)<br><span style="font-size:20px; color:#aaa;">(画面タップで選択画面へ戻る)</span>`;
+        timer.style.fontSize = "32px";
+    }
+    
+    currentAnswer = null;
+    isGameOver = true; // 結果表示後にゲームオーバーフラグをONにする
+}
+
+canvas.addEventListener("click", async (e)=>{
+    if(isGameOver){
+        window.location.href = "select.html";
+        return;
+    }
+    if(!currentAnswer || isCorrect || isAnimating){
+        return;
+    }
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    if(
+        x >= currentAnswer.x &&
+        x <= currentAnswer.x + currentAnswer.width &&
+        y >= currentAnswer.y &&
+        y <= currentAnswer.y + currentAnswer.height
+    ){
+        isCorrect = true;
+        await showResultEffect(true);  
+    }else{
+        await showResultEffect(false); 
+    }
+});
+
+startGame();
+</script>
+</body>
+</html>

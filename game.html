@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>間違い探し</title>
+<style>
+body{
+    margin:0;
+    background:black;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+#game{
+    position:relative;
+}
+canvas{
+    width:1280px;
+    height:720px;
+}
+#timer{
+    position:absolute;
+    top:20px;
+    left:20px;
+    color:white;
+    font-size:50px;
+    font-weight:bold;
+    text-shadow:
+    0 0 10px black;
+    z-index:10;
+}
+/* クイズ風の正解・不正解エフェクト用 */
+#overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1280px;
+    height: 720px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none; /* クリックを阻害しない */
+    z-index: 20;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+#overlay img {
+    width: 300px; /* 画像のサイズ */
+    height: 300px;
+}
+</style>
+</head>
+<body>
+<div id="game">
+    <canvas id="canvas" width="1280" height="720"></canvas>
+    <div id="timer">80</div>
+    <!-- 〇×表示用のレイヤー -->
+    <div id="overlay">
+        <img id="result-img" src="" alt="演出画像">
+    </div>
+</div>
+
+<script>
+const series = [
+    {
+        name:"hirosakijou",
+        time:55,
+        answer:{
+            x:560,
+            y:360,
+            width:290,
+            height:200
+        },
+        images:[
+            "images/hirosakijou1.jpg",
+            "images/hirosakijou2.jpg",
+            "images/hirosakijou3.jpg",
+            "images/hirosakijou4.jpg",
+            "images/hirosakijou5.jpg",
+            "images/hirosakijou6.jpg",
+            "images/hirosakijou7.jpg",
+            "images/hirosakijou8.jpg",
+            "images/hirosakijou9.jpg",
+            "images/hirosakijou10.jpg",
+            "images/hirosakijou11.jpg"
+        ]
+    },
+    {
+        name:"iwakisan",
+        time:55,
+        answer:{
+            x:241,
+            y:108,
+            width:744,
+            height:175
+        },
+        images:[
+            "images/iwakisan1.jpg",
+            "images/iwakisan2.jpg",
+            "images/iwakisan3.jpg",
+            "images/iwakisan4.jpg",
+            "images/iwakisan5.jpg",
+            "images/iwakisan6.jpg",
+            "images/iwakisan7.jpg",
+            "images/iwakisan8.jpg",
+            "images/iwakisan9.jpg",
+            "images/iwakisan10.jpg",
+            "images/iwakisan11.jpg"
+        ]
+    },
+    {
+        name:"iwakiyamajinjya",
+        time:50,
+        answer:{
+            x:467,
+            y:448,
+            width:794,
+            height:153
+        },
+        images:[
+            "images/iwakiyamajinjya1.jpg",
+            "images/iwakiyamajinjya2.jpg",
+            "images/iwakiyamajinjya3.jpg",
+            "images/iwakiyamajinjya4.jpg",
+            "images/iwakiyamajinjya5.jpg",
+            "images/iwakiyamajinjya6.jpg",
+            "images/iwakiyamajinjya7.jpg",
+            "images/iwakiyamajinjya8.jpg",
+            "images/iwakiyamajinjya9.jpg",
+            "images/iwakiyamajinjya10.jpg"
+        ]
+    },
+    {
+        name:"yoruhirosakijou",
+        time:55,
+        answer:{
+            x:1,
+            y:506,
+            width:1277,
+            height:212
+        },
+        images:[
+            "images/yoruhirosakijou0.jpg",
+            "images/yoruhirosakijou1.jpg",
+            "images/yoruhirosakijou2.jpg",
+            "images/yoruhirosakijou3.jpg",
+            "images/yoruhirosakijou4.jpg",
+            "images/yoruhirosakijou5.jpg",
+            "images/yoruhirosakijou6.jpg",
+            "images/yoruhirosakijou7.jpg",
+            "images/yoruhirosakijou8.jpg",
+            "images/yoruhirosakijou9.jpg",
+            "images/yoruhirosakijou10.jpg"
+        ]
+    },
+    {
+        name:"sakurasabun",
+        time:55,
+        answer:{
+            x:1,
+            y:100,
+            width:682,
+            height:465
+        },
+        images:[
+            "images/sakurasabun0.jpg",
+            "images/sakurasabun1.jpg",
+            "images/sakurasabun2.jpg",
+            "images/sakurasabun3.jpg",
+            "images/sakurasabun4.jpg",
+            "images/sakurasabun5.jpg",
+            "images/sakurasabun6.jpg",
+            "images/sakurasabun7.jpg",
+            "images/sakurasabun8.jpg",
+            "images/sakurasabun9.jpg",
+            "images/sakurasabun10.jpg"
+        ]
+    },
+    {
+        name:"hashifune",
+        time:50,
+        answer:{
+            x:122,
+            y:167,
+            width:852,
+            height:437
+        },
+        images:[
+            "images/hashifune0.jpg",
+            "images/hashifune1.jpg",
+            "images/hashifune2.jpg",
+            "images/hashifune3.jpg",
+            "images/hashifune4.jpg",
+            "images/hashifune5.jpg",
+            "images/hashifune6.jpg",
+            "images/hashifune7.jpg",
+            "images/hashifune8.jpg",
+            "images/hashifune9.jpg"
+        ]
+    },
+    {
+        name:"otemon",
+        time:50,
+        answer:{
+            x:1,
+            y:195,
+            width:356,
+            height:241
+        },
+        images:[
+            "images/otemon0.jpg",
+            "images/otemon1.jpg",
+            "images/otemon2.jpg",
+            "images/otemon3.jpg",
+            "images/otemon4.jpg",
+            "images/otemon5.jpg",
+            "images/otemon6.jpg",
+            "images/otemon7.jpg",
+            "images/otemon8.jpg",
+            "images/otemon9.jpg"
+        ]
+    }
+];
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const timer = document.getElementById("timer");
+const overlay = document.getElementById("overlay");
+const resultImg = document.getElementById("result-img");
+
+let currentAnswer = null;
+let isCorrect = false;      // 正解フラグ
+let isAnimating = false;    // 演出中フラグ
+
+// 正解されたら即座に終了する拡張wait関数
+function wait(ms){
+    return new Promise(resolve => {
+        const timeout = setTimeout(() => {
+            clearInterval(checkInterval);
+            resolve();
+        }, ms);
+        
+        const checkInterval = setInterval(() => {
+            if (isCorrect) {
+                clearTimeout(timeout);
+                clearInterval(checkInterval);
+                resolve();
+            }
+        }, 30);
+    });
+}
+
+function loadImage(src){
+    return new Promise(resolve=>{
+        const img = new Image();
+        img.onload = ()=>{
+            resolve(img);
+        };
+        img.src = src;
+    });
+}
+
+function drawImage(img){
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+    ctx.globalAlpha = 1;
+    ctx.drawImage(
+        img,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+}
+
+// 〇×演出を1秒間表示する関数
+function showResultEffect(isMaru) {
+    return new Promise(resolve => {
+        isAnimating = true;
+        resultImg.src = isMaru ? "UIimages/maru.png" : "UIimages/batsu.png";
+        
+        // フェードイン
+        overlay.style.opacity = "1";
+        
+        // 1秒後にフェードアウト
+        setTimeout(() => {
+            overlay.style.opacity = "0";
+            setTimeout(() => {
+                isAnimating = false;
+                resolve();
+            }, 200); // CSSのtransition（0.2s）を待つ
+        }, 300);
+    });
+}
+
+async function playSeries(data){
+    currentAnswer = data.answer;
+    isCorrect = false; // シリーズ開始時に初期化
+    let remain = data.time;
+    let timeUp = false;
+    timer.textContent = remain;
+    
+    const timerID = setInterval(()=>{
+        if(isCorrect) {
+            clearInterval(timerID);
+            return;
+        }
+        remain--;
+        timer.textContent = remain;
+        if(remain <= 0){
+            timeUp = true;
+            clearInterval(timerID);
+        }
+    },1000);
+
+    let current = await loadImage(
+        data.images[0]
+    );
+    drawImage(current);
+    await wait(2000);
+    
+    for(let i=1;i<data.images.length;i++){
+        if(timeUp || isCorrect){
+            break;
+        }
+        let next = await loadImage(
+            data.images[i]
+        );
+        for(let a=0;a<=100;a++){
+            if(isCorrect) break;
+            
+            ctx.clearRect(
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+            ctx.globalAlpha = 1;
+            ctx.drawImage(
+                current,
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+            ctx.globalAlpha = a/100;
+            ctx.drawImage(
+                next,
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+            await wait(30);
+        }
+        current = next;
+        await wait(2000);
+    }
+    clearInterval(timerID);
+}
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+async function startGame(){
+    shuffleArray(series);
+    const selectedSeries=series.slice(0,10);
+    for(const data of selectedSeries){
+        await playSeries(data);
+    }
+    timer.textContent="終了";
+    currentAnswer = null;
+}
+
+canvas.addEventListener("click", async (e)=>{
+    if(!currentAnswer || isCorrect || isAnimating){
+        return;
+    }
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    if(
+        x >= currentAnswer.x &&
+        x <= currentAnswer.x + currentAnswer.width &&
+        y >= currentAnswer.y &&
+        y <= currentAnswer.y + currentAnswer.height
+    ){
+        isCorrect = true;
+        await showResultEffect(true);  // 〇演出
+    }else{
+        await showResultEffect(false); // ×演出
+    }
+});
+
+startGame();
+</script>
+</body>
+</html>

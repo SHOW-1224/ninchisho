@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>間違い探し</title>
+<style>
+body{
+    margin:0;
+    background:black;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+#game{
+    position:relative;
+}
+canvas{
+    width:1280px;
+    height:720px;
+}
+#timer{
+    position:absolute;
+    top:20px;
+    left:20px;
+    color:white;
+    font-size:50px;
+    font-weight:bold;
+    text-shadow: 0 0 10px black;
+    z-index:10;
+    line-height: 1.2;
+}
+/* クイズ風の正解・不正解エフェクト用 */
+#overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 1280px;
+    height: 720px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none; /* クリックを阻害しない */
+    z-index: 20;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+#overlay img {
+    width: 300px; /* 画像のサイズ */
+    height: 300px;
+}
+</style>
+</head>
+<body>
+<div id="game">
+    <canvas id="canvas" width="1280" height="720"></canvas>
+    <div id="timer">80</div>
+    <!-- 〇×表示用のレイヤー -->
+    <div id="overlay">
+        <img id="result-img" src="" alt="演出画像">
+    </div>
+</div>
+
+<script>
+const series = [
+    {
+        name:"hirosakijou",
+        time:55,
+        answer:{
+            x:560,
+            y:360,                      //ok
+            width:290,
+            height:200
+        },
+        images:[
+            "normal/hirosakijou1.jpg",
+            "normal/hirosakijou2.jpg",
+            "normal/hirosakijou3.jpg",
+            "normal/hirosakijou4.jpg",
+            "normal/hirosakijou5.jpg",
+            "normal/hirosakijou6.jpg",
+            "normal/hirosakijou7.jpg",
+            "normal/hirosakijou8.jpg",
+            "normal/hirosakijou9.jpg",
+            "normal/hirosakijou10.jpg",
+            "normal/hirosakijou11.jpg"
+        ]
+    },
+    {
+        name:"hunesabun",
+        time:55,
+        answer:{
+            x:245,
+            y:352,
+            width:113,                       //ok
+            height:125
+        },
+        images:[
+            "normal/hunesabun1.jpg",
+            "normal/hunesabun2.jpg",
+            "normal/hunesabun3.jpg",
+            "normal/hunesabun4.jpg",
+            "normal/hunesabun5.jpg",
+            "normal/hunesabun6.jpg",
+            "normal/hunesabun7.jpg",
+            "normal/hunesabun8.jpg",
+            "normal/hunesabun9.jpg"
+        ]
+    },
+    {
+        name:"ringokouen",
+        time:55,
+        answer:{
+            x:113,
+            y:469,
+            width:1162,                      //ok
+            height:187
+        },
+        images:[
+            "normal/ringokouen0.jpg",
+            "normal/ringokouen1.jpg",
+            "normal/ringokouen2.jpg",
+            "normal/ringokouen3.jpg",
+            "normal/ringokouen4.jpg",
+            "normal/ringokouen5.jpg",
+            "normal/ringokouen6.jpg",
+            "normal/ringokouen7.jpg",
+            "normal/ringokouen8.jpg",
+            "normal/ringokouen9.jpg"
+        ]
+    },
+    {
+        name:"ringokouen",
+        time:50,
+        answer:{
+            x:624,
+            y:149,
+            width:110,                      //ok
+            height:63
+        },
+        images:[
+            "normal/kankoukansabun0.jpg",
+            "normal/kankoukansabun1.jpg",
+            "normal/kankoukansabun2.jpg",
+            "normal/kankoukansabun3.jpg",
+            "normal/kankoukansabun4.jpg",
+            "normal/kankoukansabun5.jpg",
+            "normal/kankoukansabun6.jpg",
+            "normal/kankoukansabun7.jpg",
+            "normal/kankoukansabun8.jpg",
+            "normal/kankoukansabun9.jpg"
+        ]
+    },
+    {
+        name:"tachineputasabun",
+        time:50,
+        answer:{
+            x:369,
+            y:221,
+            width:103,                      //ok
+            height:39
+        },
+        images:[
+            "normal/tachineputasabun0.jpg",
+            "normal/tachineputasabun1.jpg",
+            "normal/tachineputasabun2.jpg",
+            "normal/tachineputasabun3.jpg",
+            "normal/tachineputasabun4.jpg",
+            "normal/tachineputasabun5.jpg",
+            "normal/tachineputasabun6.jpg",
+            "normal/tachineputasabun7.jpg",
+            "normal/tachineputasabun8.jpg",
+            "normal/tachineputasabun9.jpg"
+        ]
+    }
+];
+
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+const timer = document.getElementById("timer");
+const overlay = document.getElementById("overlay");
+const resultImg = document.getElementById("result-img");
+
+// 効果音用の音声オブジェクトを作成
+const correctSound = new Audio("sounds/correct.mp3");
+const incorrectSound = new Audio("sounds/incorrect.mp3");
+
+// ブラウザの設定から音声設定を取得
+const audioSetting = localStorage.getItem("audioSetting") || "on";
+const isAudioOn = (audioSetting === "on");
+
+let currentAnswer = null;
+let isCorrect = false;      // 正解フラグ
+let isAnimating = false;    // 演出中フラグ
+let scoreTimes = [];        // 正解にかかった時間を保存する配列
+let isGameOver = false;     // ゲーム終了フラグ
+
+// 正解されたら即座に終了する拡張wait関数
+function wait(ms){
+    return new Promise(resolve => {
+        const timeout = setTimeout(() => {
+            clearInterval(checkInterval);
+            resolve();
+        }, ms);
+        
+        const checkInterval = setInterval(() => {
+            if (isCorrect) {
+                clearTimeout(timeout);
+                clearInterval(checkInterval);
+                resolve();
+            }
+        }, 30);
+    });
+}
+
+function loadImage(src){
+    return new Promise(resolve=>{
+        const img = new Image();
+        img.onload = ()=>{
+            resolve(img);
+        };
+        img.src = src;
+    });
+}
+
+function drawImage(img){
+    ctx.clearRect(
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+    ctx.globalAlpha = 1;
+    ctx.drawImage(
+        img,
+        0,
+        0,
+        canvas.width,
+        canvas.height
+    );
+}
+
+// 〇×演出と音声再生を行う関数
+function showResultEffect(isMaru) {
+    return new Promise(resolve => {
+        isAnimating = true;
+        resultImg.src = isMaru ? "UIimages/maru.png" : "UIimages/batsu.png";
+        
+        // 音声ONのときだけ効果音を再生
+        if (isAudioOn) {
+            const sound = isMaru ? correctSound : incorrectSound;
+            sound.currentTime = 0;
+            sound.play().catch(e => console.log("音声再生エラー:", e));
+        }
+
+        // フェードイン
+        overlay.style.opacity = "1";
+        
+        // 1秒後にフェードアウト
+        setTimeout(() => {
+            overlay.style.opacity = "0";
+            setTimeout(() => {
+                isAnimating = false;
+                resolve();
+            }, 200); // CSSのtransition（0.2s）を待つ
+        }, 300);
+    });
+}
+
+async function playSeries(data){
+    currentAnswer = data.answer;
+    isCorrect = false; // シリーズ開始時に初期化
+    let remain = data.time;
+    let timeUp = false;
+    timer.textContent = remain;
+    
+    const startTime = Date.now(); // 問題開始時刻を記録
+
+    const timerID = setInterval(()=>{
+        if(isCorrect) {
+            clearInterval(timerID);
+            return;
+        }
+        remain--;
+        timer.textContent = remain;
+        if(remain <= 0){
+            timeUp = true;
+            clearInterval(timerID);
+        }
+    },1000);
+
+    let current = await loadImage(
+        data.images[0]
+    );
+    drawImage(current);
+    await wait(2000);
+    
+    for(let i=1; i<data.images.length; i++){
+        if(timeUp || isCorrect){
+            break;
+        }
+        let next = await loadImage(
+            data.images[i]
+        );
+        for(let a=0; a<=100; a++){
+            if(isCorrect) break;
+            
+            ctx.clearRect(
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+            ctx.globalAlpha = 1;
+            ctx.drawImage(
+                current,
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+            ctx.globalAlpha = a/100;
+            ctx.drawImage(
+                next,
+                0,
+                0,
+                canvas.width,
+                canvas.height
+            );
+            await wait(30);
+        }
+        current = next;
+        await wait(2000);
+    }
+    clearInterval(timerID);
+
+    // 正解した場合のみ、かかった時間（秒）を記録
+    if(isCorrect) {
+        const elapsedTime = (Date.now() - startTime) / 1000;
+        scoreTimes.push(elapsedTime);
+    }
+}
+
+function shuffleArray(array) {
+    for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+    }
+}
+
+async function startGame(){
+    scoreTimes = [];
+    shuffleArray(series);
+    const selectedSeries=series.slice(0, 10); // 登録数に合わせて調整（例では最大3問）
+    for(const data of selectedSeries){
+        await playSeries(data);
+    }
+
+    // 終了時のスコア・ランク計算
+    if(scoreTimes.length > 0) {
+        const totalTime = scoreTimes.reduce((sum, time) => sum + time, 0);
+        const avgTime = totalTime / scoreTimes.length;
+        
+        let rank = "C";
+        if(avgTime <= 25) {
+            rank = "S";
+        } else if(avgTime <= 35) {
+            rank = "A";
+        } else if(avgTime <= 45) {
+            rank = "B";
+        }
+        
+        timer.innerHTML = `終了！<br>平均: ${avgTime.toFixed(1)}秒<br>評価: ${rank}<br><span style="font-size:20px; color:#aaa;">(画面タップで選択画面へ戻る)</span>`;
+        timer.style.fontSize = "32px";
+    } else {
+        timer.innerHTML = `終了 (正解なし)<br><span style="font-size:20px; color:#aaa;">(画面タップで選択画面へ戻る)</span>`;
+        timer.style.fontSize = "32px";
+    }
+
+    currentAnswer = null;
+    isGameOver = true; // 結果表示後にゲームオーバーフラグをONにする
+}
+
+canvas.addEventListener("click", async (e)=>{
+    if(isGameOver){
+        window.location.href = "select.html";
+        return;
+    }
+    if(!currentAnswer || isCorrect || isAnimating){
+        return;
+    }
+    const rect = canvas.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    if(
+        x >= currentAnswer.x &&
+        x <= currentAnswer.x + currentAnswer.width &&
+        y >= currentAnswer.y &&
+        y <= currentAnswer.y + currentAnswer.height
+    ){
+        isCorrect = true;
+        await showResultEffect(true);  // 〇演出
+    }else{
+        await showResultEffect(false); // ×演出
+    }
+});
+
+startGame();
+</script>
+</body>
+</html>

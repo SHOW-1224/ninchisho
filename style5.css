@@ -1,0 +1,52 @@
+body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: sans-serif;
+    color: #72f00c;
+    background-image: url("haikei3.jpg");
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+.container {
+    text-align: center;
+    /* 背景画像の上でも文字やボタンが読みやすくなるように薄い黒背景とぼかしを追加 */
+    background: rgba(0, 0, 0, 0.6);
+    padding: 40px 60px;
+    border-radius: 20px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+}
+
+.title {
+    font-size: 70px;
+    font-weight: bold;
+    color: #72f00c;
+    text-shadow: 0 0 20px #ffffff, 0 0 40px #72f00c;
+    margin-bottom: 30px;
+}
+
+.btn {
+    display: block;
+    margin: 15px auto;
+    padding: 16px 24px;
+    width: 300px;
+    font-size: 24px;
+    font-weight: bold;
+    border: 2px solid #ffffff;
+    border-radius: 10px;
+    color: #72f00c;
+    background-color: rgba(0, 0, 0, 0.4);
+    text-decoration: none;
+    transition: 0.2s;
+}
+
+/* ボタンにマウスを合わせたとき（ホバー時）の演出 */
+.btn:hover {
+    background-color: #72f00c;
+    color: #000000;
+    box-shadow: 0 0 15px #72f00c;
+}

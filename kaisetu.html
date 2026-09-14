@@ -1,0 +1,268 @@
+<!DOCTYPE html> <!-- ドキュメントがHTML5であることを宣言する -->
+<html lang="ja"> <!-- 文書の言語を日本語に設定する -->
+<head> <!-- メタデータやスタイルシートの読み込み領域の開始 -->
+<meta charset="UTF-8"> <!-- 文字エンコーディングをUTF-8に指定する -->
+<title>間違い探し - イージー</title> <!-- ブラウザのタブに表示されるタイトルを設定する -->
+<style> <!-- 内部CSSスタイルの定義を開始する -->
+body{ <!-- 画面全体（body）のスタイル定義の開始 -->
+    margin:0; /* 外側の余白をなくす */
+    background:black; /* 背景色を黒にする */
+    display:flex; /* フレックスボックスレイアウトを有効にする */
+    justify-content:center; /* 子要素を水平方向の中心に配置する */
+    align-items:center; /* 子要素を垂直方向の中心に配置する */
+    height:100vh; /* 高さをビューポートの100%にする */
+} /* bodyのスタイル定義の終了 */
+#game{ /* ゲーム全体のラッパー要素のスタイル定義の開始 */
+    position:relative; /* 子要素の絶対配置の基準位置とする */
+} /* #gameのスタイル定義の終了 */
+canvas{ /* キャンバス要素のスタイル定義の開始 */
+    width:1280px; /* 表示上の幅を1280ピクセルにする */
+    height:720px; /* 表示上の高さを720ピクセルにする */
+} /* canvasのスタイル定義の終了 */
+#timer{ /* タイマー表示要素のスタイル定義の開始 */
+    position:absolute; /* 親要素に対して絶対配置にする */
+    top:20px; /* 上端から20ピクセルの位置に配置する */
+    left:20px; /* 左端から20ピクセルの位置に配置する */
+    color:white; /* 文字の色を白にする */
+    font-size:50px; /* 文字の大きさを50ピクセルにする */
+    font-weight:bold; /* 文字を太字にする */
+    text-shadow: 0 0 10px black; /* 文字に黒い影をつけて読みやすくする */
+    z-index:10; /* 重なり順を手前に設定する */
+    line-height: 1.2; /* 行の高さを調整する */
+} /* #timerのスタイル定義の終了 */
+#overlay{ /* 〇×演出用のオーバーレイ領域のスタイル定義の開始 */
+    position:absolute; /* 親要素に対して絶対配置にする */
+    top:0; /* 上端に合わせる */
+    left:0; /* 左端に合わせる */
+    width:1280px; /* 幅を1280ピクセルにする */
+    height:720px; /* 高さを720ピクセルにする */
+    display:flex; /* フレックスボックスにする */
+    justify-content:center; /* 水平方向の中央に配置する */
+    align-items:center; /* 垂直方向の中央に配置する */
+    pointer-events:none; /* クリック操作を透過させる（下の要素を押せるようにする） */
+    z-index:20; /* 重なり順をタイマーよりさらに手前にする */
+    opacity:0; /* 初期状態では透明にする */
+    transition:opacity 0.2s ease; /* 不透明度の変化に0.2秒のアニメーションを設定する */
+} /* #overlayのスタイル定義の終了 */
+#overlay img{ /* オーバーレイ内の画像（〇×）のスタイル定義の開始 */
+    width:300px; /* 画像の幅を300ピクセルにする */
+    height:300px; /* 画像の高さを300ピクセルにする */
+} /* #overlay imgのスタイル定義の終了 */
+</style> <!-- スタイル定義の終了 -->
+</head> <!-- ヘッダー領域の終了 -->
+<body> <!-- 画面に表示されるコンテンツの開始 -->
+<div id="game"> <!-- ゲーム画面全体を囲むコンテナ要素の開始 -->
+    <canvas id="canvas" width="1280" height="720"></canvas> <!-- ゲーム画像を描画するキャンバス要素 -->
+    <div id="timer">80</div> <!-- 残り時間やスコアを表示する要素 -->
+    <div id="overlay"> <!-- 正誤判定の〇×画像を配置するレイヤーの開始 -->
+        <img id="result-img" src="" alt="演出画像"> <!-- 〇または×の画像を表示する要素 -->
+    </div> <!-- #overlayの終了 -->
+</div> <!-- #gameの終了 -->
+
+<script> <!-- JavaScriptプログラムの開始 -->
+const series = [ // 各問題データのオブジェクトを格納する配列の開始
+    { // 1問目のデータ定義の開始
+        name:"iwakisan", // 問題の識別名
+        time:55, // この問題の制限時間（秒）
+        answer:{ x:241, y:108, width:744, height:175 }, // 正解判定の当たり判定（座標と大きさ）
+        images:[ // 変化していく画像のファイルパス一覧の配列の開始
+            "easy/iwakisan1.jpg", "easy/iwakisan2.jpg", "easy/iwakisan3.jpg", "easy/iwakisan4.jpg",
+            "easy/iwakisan5.jpg", "easy/iwakisan6.jpg", "easy/iwakisan7.jpg", "easy/iwakisan8.jpg",
+            "easy/iwakisan9.jpg", "easy/iwakisan10.jpg", "easy/iwakisan11.jpg"
+        ] // 画像配列の終了
+    }, // 1問目のデータ定義の終了
+    { // 2問目のデータ定義の開始
+        name:"iwakiyamajinjya", // 問題の識別名
+        time:50, // 制限時間
+        answer:{ x:467, y:448, width:794, height:153 }, // 当たり判定
+        images:[ // 画像配列の開始
+            "easy/iwakiyamajinjya1.jpg", "easy/iwakiyamajinjya2.jpg", "easy/iwakiyamajinjya3.jpg",
+            "easy/iwakiyamajinjya4.jpg", "easy/iwakiyamajinjya5.jpg", "easy/iwakiyamajinjya6.jpg",
+            "easy/iwakiyamajinjya7.jpg", "easy/iwakiyamajinjya8.jpg", "easy/iwakiyamajinjya9.jpg",
+            "easy/iwakiyamajinjya10.jpg"
+        ] // 画像配列の終了
+    }, // 2問目のデータ定義の終了
+    { // 3問目のデータ定義の開始
+        name:"yoruhirosakijou", // 問題の識別名
+        time:55, // 制限時間
+        answer:{ x:1, y:506, width:1277, height:212 }, // 当たり判定
+        images:[ // 画像配列の開始
+            "easy/yoruhirosakijou0.jpg", "easy/yoruhirosakijou1.jpg", "easy/yoruhirosakijou2.jpg",
+            "easy/yoruhirosakijou3.jpg", "easy/yoruhirosakijou4.jpg", "easy/yoruhirosakijou5.jpg",
+            "easy/yoruhirosakijou6.jpg", "easy/yoruhirosakijou7.jpg", "easy/yoruhirosakijou8.jpg",
+            "easy/yoruhirosakijou9.jpg", "easy/yoruhirosakijou10.jpg"
+        ] // 画像配列の終了
+    } // 3問目のデータ定義の終了
+]; // series配列の終了
+
+const canvas = document.getElementById("canvas"); // HTMLのcanvas要素を取得する
+const ctx = canvas.getContext("2d"); // 2D描画用のコンテキストを取得する
+const timer = document.getElementById("timer"); // タイマー表示要素を取得する
+const overlay = document.getElementById("overlay"); // オーバーレイ要素を取得する
+const resultImg = document.getElementById("result-img"); // 結果画像要素を取得する
+
+let currentAnswer = null; // 現在の問題の正解エリア情報を格納する変数
+let isCorrect = false;      // 現在の問題を正解したかどうかを示すフラグ
+let isAnimating = false;    // 〇×演出が実行中かどうかを示すフラグ
+let scoreTimes = [];        // 各問題で正解にかかった時間を記録する配列
+
+function wait(ms){ // 指定ミリ秒だけ処理を遅延させる非同期関数の定義
+    return new Promise(resolve => { // Promiseオブジェクトを返す
+        const timeout = setTimeout(() => { // 指定時間後に実行されるタイマーを設定する
+            clearInterval(checkInterval); // 監視用インターバルをクリアする
+            resolve(); // 処理を完了させる
+        }, ms); // 遅延時間の設定
+        
+        const checkInterval = setInterval(() => { // 正解されたかを常時チェックするインターバルを設定する
+            if (isCorrect) { // もし正解フラグが立ったら
+                clearTimeout(timeout); // タイマーをキャンセルする
+                clearInterval(checkInterval); // インターバルをクリアする
+                resolve(); // 処理を即座に完了させる
+            }
+        }, 30); // 30ミリ秒ごとにチェックする
+    });
+} // wait関数の終了
+
+function loadImage(src){ // 画像を非同期で読み込む関数の定義
+    return new Promise(resolve=>{ // Promiseオブジェクトを返す
+        const img = new Image(); // 新しい画像オブジェクトを作成する
+        img.onload = ()=> resolve(img); // 読み込みが完了したら画像を返す
+        img.src = src; // 画像のファイルパスを指定して読み込みを開始する
+    });
+} // loadImage関数の終了
+
+function drawImage(img){ // キャンバスに画像を描画する関数の定義
+    ctx.clearRect(0, 0, canvas.width, canvas.height); // キャンバス全体をクリアする
+    ctx.globalAlpha = 1; // 不透明度を1（最大）に設定する
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height); // 画像を描画する
+} // drawImage関数の終了
+
+function showResultEffect(isMaru) { // 正解・不正解の〇×演出を表示する関数の定義
+    return new Promise(resolve => { // Promiseオブジェクトを返す
+        isAnimating = true; // 演出中フラグを立てる
+        resultImg.src = isMaru ? "UIimages/maru.png" : "UIimages/batsu.png"; // 正解ならマル、不正解ならバツの画像を設定する
+        overlay.style.opacity = "1"; // オーバーレイを表示（不透明度を1）にする
+        
+        setTimeout(() => { // 300ミリ秒待つタイマー
+            overlay.style.opacity = "0"; // オーバーレイを非表示（不透明度を0）にする
+            setTimeout(() => { // フェードアウトの完了を待つタイマー
+                isAnimating = false; // 演出中フラグを降ろす
+                resolve(); // 処理を完了させる
+            }, 200); // 200ミリ秒待つ
+        }, 300); // 300ミリ秒待つ
+    });
+} // showResultEffect関数の終了
+
+async function playSeries(data){ // 1つの問題シリーズを再生・進行させる非同期関数の定義
+    currentAnswer = data.answer; // 現在の問題の正解エリア情報をセットする
+    isCorrect = false; // 正解フラグを初期化する
+    let remain = data.time; // 残り時間を設定する
+    let timeUp = false; // タイムアップフラグを初期化する
+    timer.textContent = remain; // タイマー表示に残り時間を反映する
+    
+    const startTime = Date.now(); // 問題開始時のタイムスタンプを記録する
+
+    const timerID = setInterval(()=>{ // 1秒ごとに残り時間を減らすタイマーを設定する
+        if(isCorrect) { // 正解していたら
+            clearInterval(timerID); // タイマーを停止する
+            return; // 処理を抜ける
+        }
+        
+        remain--; // 残り時間を1秒減らす
+        timer.textContent = remain; // 画面のタイマー表示を更新する
+        if(remain <= 0){ // 残り時間が0以下になったら
+            timeUp = true; // タイムアップフラグを立てる
+            clearInterval(timerID); // タイマーを停止する
+        }
+    },1000); // 1000ミリ秒（1秒）ごとに実行
+
+    let current = await loadImage(data.images[0]); // 最初の画像を非同期で読み込む
+    drawImage(current); // 最初の画像を描画する
+    await wait(2000); // 2秒間静止して見せる
+    
+    for(let i=1; i<data.images.length; i++){ // 2枚目以降の画像を順番に変化させるループの開始
+        if(timeUp || isCorrect) break; // タイムアップか正解していたらループを抜ける
+
+        let next = await loadImage(data.images[i]); // 次の画像を読み込む
+        for(let a=0; a<=100; a++){ // 画像を徐々に切り替える（フェード）ループの開始
+            if(isCorrect) break; // 途中でも正解したらループを抜ける
+            
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // キャンバスをクリアする
+            ctx.globalAlpha = 1; // 基準の不透明度を1にする
+            ctx.drawImage(current, 0, 0, canvas.width, canvas.height); // 現在の画像を描画する
+            ctx.globalAlpha = a/100; // 次の画像の不透明度を徐々に上げる（0から1へ）
+            ctx.drawImage(next, 0, 0, canvas.width, canvas.height); // 次の画像を描画する
+            await wait(30); // 30ミリ秒待つ
+        } // フェードのループ終了
+        current = next; // 現在の画像を次の画像に更新する
+        await wait(2000); // 2秒間静止して見せる
+    } // 画像変化ループの終了
+    clearInterval(timerID); // タイマーをクリアする
+
+    if(isCorrect) { // 正解した場合のみ
+        const elapsedTime = (Date.now() - startTime) / 1000; // かかった時間を秒に換算して計算する
+        scoreTimes.push(elapsedTime); // スコア配列にかかった時間を追加する
+    }
+} // playSeries関数の終了
+
+function shuffleArray(array) { // 配列の要素をランダムに並び替える（シャッフル）関数の定義
+    for (let i = array.length - 1; i > 0; i--) { // 配列の末尾からループを開始する
+        const j = Math.floor(Math.random() * (i + 1)); // ランダムなインデックスを生成する
+        [array[i], array[j]] = [array[j], array[i]]; // 要素を入れ替える
+    }
+} // shuffleArray関数の終了
+
+async function startGame(){ // ゲーム全体の流れを統括する非同期関数の定義
+    scoreTimes = []; // スコア用配列を初期化する
+    shuffleArray(series); // 問題の順番をランダムにシャッフルする
+    const selectedSeries = series.slice(0, 3); // シャッフルした中から3問を抽出する
+    for(const data of selectedSeries){ // 抽出した問題を1問ずつ順番に出題するループの開始
+        await playSeries(data); // 問題を再生し、終わるまで待つ
+    } // 出題ループの終了
+
+    if(scoreTimes.length > 0) { // 1問以上正解していた場合
+        const totalTime = scoreTimes.reduce((sum, time) => sum + time, 0); // かかった時間の合計を計算する
+        const avgTime = totalTime / scoreTimes.length; // 平均正解時間を算出する
+        
+        let rank = "C"; // 初期ランクをCに設定する
+        if(avgTime <= 5) { // 平均が5秒以下の場合
+            rank = "S"; // Sランクにする
+        } else if(avgTime <= 10) { // 平均が10秒以下の場合
+            rank = "A"; // Aランクにする
+        } else if(avgTime <= 15) { // 平均が15秒以下の場合
+            rank = "B"; // Bランクにする
+        }
+        
+        timer.innerHTML = `終了！<br>平均: ${avgTime.toFixed(1)}秒<br>評価: ${rank}`; // 平均タイムとランクを画面に表示する
+        timer.style.fontSize = "35px"; // 文字サイズを調整する
+    } else { // 全く正解できなかった場合
+        timer.textContent = "終了 (正解なし)"; // 正解なしと表示する
+    }
+    
+    currentAnswer = null; // 解答受付を終了するため正解エリアを無効化する
+} // startGame関数の終了
+
+canvas.addEventListener("click", async (e)=>{ // キャンバスがクリックされたときのイベント処理の開始
+    if(!currentAnswer || isCorrect || isAnimating){ // 問題が出ていない、すでに正解した、または演出中の場合は何もしない
+        return; // 処理を中断する
+    }
+    const rect = canvas.getBoundingClientRect(); // キャンバスの画面上の位置とサイズを取得する
+    const x = e.clientX - rect.left; // クリックされたX座標（キャンバス内）を計算する
+    const y = e.clientY - rect.top; // クリックされたY座標（キャンバス内）を計算する
+    if( // クリック位置が正解エリア内にあるかを判定する条件分岐の開始
+        x >= currentAnswer.x &&
+        x <= currentAnswer.x + currentAnswer.width &&
+        y >= currentAnswer.y &&
+        y <= currentAnswer.y + currentAnswer.height
+    ){ // 正解エリア内の場合
+        isCorrect = true; // 正解フラグを立てる
+        await showResultEffect(true); // 〇演出を表示する
+    }else{ // 不正解エリアの場合
+        await showResultEffect(false); // ×演出を表示する
+    } // 判定の終了
+}); // クリックイベントの終了
+
+startGame(); // ページ読み込み時にゲームを開始する関数を呼び出す
+</script> <!-- JavaScriptの終了 -->
+</body> <!-- bodyの終了 -->
+</html> <!-- HTMLドキュメントの終了 -->

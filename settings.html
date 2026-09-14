@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>設定</title>
+<link rel="stylesheet" href="style5.css">
+</head>
+<body>
+
+<div class="container">
+    <div class="title">⚙ 設定</div>
+
+    <div class="section">
+        <div class="label">音声</div>
+        <!-- settings.html のリンクまたはボタン部分 -->
+    <a class="btn" href="#" onclick="setAudio('on')">音ON</a>
+    <a class="btn" href="#" onclick="setAudio('off')">音OFF</a>
+
+    <script>
+    function setAudio(status) {
+        localStorage.setItem("audioSetting", status);
+        // 設定後に元の画面（select.html）へ戻る
+        window.location.href = "select.html";
+    }
+    </script>
+    </div>
+
+    <div class="section">
+        <a class="btn back-btn" href="select.html">戻る</a>
+    </div>
+</div>
+
+</body>
+</html>

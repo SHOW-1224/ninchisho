@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>Next</title>
+
+<style>
+body {
+    margin: 0;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: black;
+    color: white;
+    font-family: sans-serif;
+    cursor: pointer; /* タップできることがわかるようにカーソルを変更 */
+}
+
+/* 中央ボックス */
+.container {
+    text-align: center;
+    max-width: 700px;
+    padding: 30px;
+}
+
+/* フェードアウト用クラス */
+.fade-out {
+    opacity: 0;
+    transition: opacity 1.5s ease;
+}
+</style>
+</head>
+
+<body>
+
+<div class="container" id="box">
+    <h1>説明</h1>
+    
+    <h2>
+        これは間違い探しゲームです。<br>
+        画像が少しずつ変化します。<br>
+        変化した場所をタップしてください。<br>
+        難易度は3種類あります。<br><br>
+        <span style="font-size: 18px; color: #aaa;">(画面タップで次へ)</span>
+    </h2>
+</div>
+    
+<script>
+let isTransitioning = false;
+
+// 画面のどこでもタップされたら select.html へ移動する関数
+function goNext() {
+    if (isTransitioning) return;
+    isTransitioning = true;
+
+    document.getElementById("box").classList.add("fade-out");
+
+    setTimeout(() => {
+        window.location.href = "select.html";
+    }, 1200);
+}
+
+// 画面全体のどこをクリックしても次へ進む（自動タイマーは削除）
+document.body.addEventListener("click", goNext);
+</script>
+
+</body>
+</html>
