@@ -10,31 +10,42 @@ body {
     background-size: cover;
     background-position: center;
     background-repeat: no-repeat;
+    /* ▼ スマホでのスクロールや勝手なズームを防ぐ設定を追加 */
+    overscroll-behavior: none;
+    touch-action: manipulation;
+    overflow: hidden;
 }
 
 .container {
     text-align: center;
     /* 背景画像の上でも文字やボタンが読みやすくなるように薄い黒背景とぼかしを追加 */
     background: rgba(0, 0, 0, 0.6);
-    padding: 40px 60px;
+    padding: 30px 20px; /* ▼ スマホで見やすいように左右のパディングをスッキリ調整 */
     border-radius: 20px;
     box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+    width: 90%;          /* ▼ 画面幅に合わせて可変に */
+    max-width: 450px;    /* ▼ PCで広がりすぎないように最大幅を制限 */
+    box-sizing: border-box;
 }
 
 .title {
-    font-size: 70px;
+    /* ▼ スマホからPCまで画面幅に合わせて自動で文字サイズが変わるように変更 */
+    font-size: clamp(32px, 8vw, 70px);
     font-weight: bold;
     color: #72f00c;
-    text-shadow: 0 0 20px #ffffff, 0 0 40px #72f00c;
-    margin-bottom: 30px;
+    text-shadow: 0 0 15px #ffffff, 0 0 30px #72f00c;
+    margin-bottom: 25px;
 }
 
 .btn {
     display: block;
     margin: 15px auto;
-    padding: 16px 24px;
-    width: 300px;
-    font-size: 24px;
+    padding: 14px 20px;
+    /* ▼ スマホの画面からはみ出さないよう、固定幅から「最大幅（max-width）」に変更 */
+    width: 100%;
+    max-width: 280px;
+    box-sizing: border-box;
+    font-size: clamp(18px, 5vw, 24px); /* ▼ スマホで文字が収まるように可変に */
     font-weight: bold;
     border: 2px solid #ffffff;
     border-radius: 10px;
@@ -49,4 +60,9 @@ body {
     background-color: #72f00c;
     color: #000000;
     box-shadow: 0 0 15px #72f00c;
+}
+
+/* ▼ スマホで指でタップした瞬間にしっかり反応・縮小する演出 */
+.btn:active {
+    transform: scale(0.95);
 }

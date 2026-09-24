@@ -2,6 +2,8 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<!-- ▼ スマホで画面が小さく表示されるのを防ぐ必須設定 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Next</title>
 
 <style>
@@ -14,7 +16,11 @@ body {
     background: black;
     color: white;
     font-family: sans-serif;
-    cursor: pointer; /* タップできることがわかるようにカーソルを変更 */
+    cursor: pointer;
+    /* ▼ スマホでのスクロールや勝手なズームを防ぐ */
+    overscroll-behavior: none;
+    touch-action: manipulation;
+    overflow: hidden;
 }
 
 /* 中央ボックス */
@@ -22,6 +28,19 @@ body {
     text-align: center;
     max-width: 700px;
     padding: 30px;
+    box-sizing: border-box; /* ▼ 画面幅からはみ出さないように安全対策 */
+}
+
+/* ▼ スマホの縦長画面でも文字が大きすぎず見やすくなるように調整 */
+h1 {
+    font-size: clamp(28px, 6vw, 42px);
+    margin-top: 0;
+}
+
+h2 {
+    font-size: clamp(16px, 4vw, 22px);
+    line-height: 1.6; /* 行間を空けて読みやすくする */
+    font-weight: normal; /* 太字を少しスッキリさせる */
 }
 
 /* フェードアウト用クラス */
@@ -42,7 +61,7 @@ body {
         画像が少しずつ変化します。<br>
         変化した場所をタップしてください。<br>
         難易度は3種類あります。<br><br>
-        <span style="font-size: 18px; color: #aaa;">(画面タップで次へ)</span>
+        <span style="font-size: 16px; color: #aaa;">(画面タップで次へ)</span>
     </h2>
 </div>
     
@@ -61,7 +80,7 @@ function goNext() {
     }, 1200);
 }
 
-// 画面全体のどこをクリックしても次へ進む（自動タイマーは削除）
+// 画面全体のどこをクリックしても次へ進む
 document.body.addEventListener("click", goNext);
 </script>
 

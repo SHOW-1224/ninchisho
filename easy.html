@@ -2,40 +2,53 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<!-- ▼ スマホで画面が縮小されないようにする必須設定 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>間違い探し - イージー</title>
 <style>
 body{
-    margin:0;
-    background:black;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:100vh;
+    margin: 0;
+    background: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: manipulation;
 }
 #game{
-    position:relative;
+    position: relative;
+    width: 100%;
+    max-width: 1280px;
+    aspect-ratio: 16 / 9; /* ▼ 常に16:9の比率を維持する */
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 canvas{
-    width:1280px;
-    height:720px;
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* ▼ 比率を崩さずに画面に収める */
+    display: block;
 }
 #timer{
-    position:absolute;
-    top:20px;
-    left:20px;
-    color:white;
-    font-size:50px;
-    font-weight:bold;
+    position: absolute;
+    top: 3%;
+    left: 3%;
+    color: white;
+    font-size: clamp(24px, 4vw, 50px);
+    font-weight: bold;
     text-shadow: 0 0 10px black;
-    z-index:10;
+    z-index: 10;
     line-height: 1.2;
 }
 #overlay {
     position: absolute;
     top: 0;
     left: 0;
-    width: 1280px;
-    height: 720px;
+    width: 100%;
+    height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -45,8 +58,8 @@ canvas{
     transition: opacity 0.2s ease;
 }
 #overlay img {
-    width: 300px;
-    height: 300px;
+    width: clamp(150px, 30vw, 300px);
+    height: clamp(150px, 30vw, 300px);
 }
 </style>
 </head>
@@ -120,7 +133,7 @@ const series = [
         answer:{
             x:319,
             y:36,
-            width:689,                      //ok
+            width:689,                     //ok
             height:61
         },
         images:[
@@ -156,14 +169,13 @@ let currentAnswer = null;
 let isCorrect = false;      
 let isAnimating = false;    
 let scoreTimes = []; 
-let isGameOver = false;     // ゲーム終了フラグ       
+let isGameOver = false;      
 
 function showResultEffect(isMaru) {
     return new Promise(resolve => {
         isAnimating = true;
         resultImg.src = isMaru ? "UIimages/maru.png" : "UIimages/batsu.png";
         
-        // 音声ONのときだけ効果音を再生
         if (isAudioOn) {
             const sound = isMaru ? correctSound : incorrectSound;
             sound.currentTime = 0;
@@ -293,16 +305,15 @@ async function startGame(){
             rank = "B";
         }
         
-        // 終了時のスコア・ランク計算部分
-        timer.innerHTML = `終了！<br>平均: ${avgTime.toFixed(1)}秒<br>評価: ${rank}<br><span style="font-size:20px; color:#aaa;">(画面タップで選択画面へ戻る)</span>`;
-        timer.style.fontSize = "32px";
+        timer.innerHTML = `終了！<br>平均: ${avgTime.toFixed(1)}秒<br>評価: ${rank}<br><span style="font-size:18px; color:#aaa;">(画面タップで選択画面へ戻る)</span>`;
+        timer.style.fontSize = "clamp(20px, 3.5vw, 32px)";
     } else {
-        timer.innerHTML = `終了 (正解なし)<br><span style="font-size:20px; color:#aaa;">(画面タップで選択画面へ戻る)</span>`;
-        timer.style.fontSize = "32px";
+        timer.innerHTML = `終了 (正解なし)<br><span style="font-size:18px; color:#aaa;">(画面タップで選択画面へ戻る)</span>`;
+        timer.style.fontSize = "clamp(20px, 3.5vw, 32px)";
     }
     
     currentAnswer = null;
-    isGameOver = true; // 結果表示後にゲームオーバーフラグをONにする
+    isGameOver = true; 
 }
 
 canvas.addEventListener("click", async (e)=>{
@@ -313,9 +324,15 @@ canvas.addEventListener("click", async (e)=>{
     if(!currentAnswer || isCorrect || isAnimating){
         return;
     }
+
+    // ▼ スマホなどの表示サイズと内部の1280x720のズレを自動計算して補正する処理
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+
     if(
         x >= currentAnswer.x &&
         x <= currentAnswer.x + currentAnswer.width &&

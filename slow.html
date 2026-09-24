@@ -2,54 +2,65 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<!-- ▼ スマホやタブレットで画面が勝手に縮小・拡大されないようにする必須設定 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>間違い探し</title>
 <style>
 body{
-    margin:0;
-    background:black;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:100vh;
+    margin: 0;
+    background: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: manipulation;
 }
 #game{
-    position:relative;
+    position: relative;
+    width: 100%;
+    max-width: 1280px;
+    aspect-ratio: 16 / 9; /* ▼ 常に16:9の綺麗な比率を維持する */
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 canvas{
-    width: 1280px;
-    height: 720px;
-    max-width: 100vw;
-    max-height: 100vh;
-    object-fit: contain;
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* ▼ 比率を崩さずに画面内に収める */
+    display: block;
 }
 #timer{
-    position:absolute;
-    top:20px;
-    left:20px;
-    color:white;
-    font-size:50px;
-    font-weight:bold;
+    position: absolute;
+    top: 3%;
+    left: 3%;
+    color: white;
+    font-size: clamp(24px, 4vw, 50px);
+    font-weight: bold;
     text-shadow: 0 0 10px black;
-    z-index:10;
+    z-index: 10;
     line-height: 1.2;
 }
+/* クイズ風の正解・不正解エフェクト用 */
 #overlay {
     position: absolute;
     top: 0;
     left: 0;
-    width: 1280px;
-    height: 720px;
+    width: 100%;
+    height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
-    pointer-events: none;
+    pointer-events: none; /* クリックを阻害しない */
     z-index: 20;
     opacity: 0;
     transition: opacity 0.2s ease;
 }
 #overlay img {
-    width: 300px;
-    height: 300px;
+    width: clamp(150px, 30vw, 300px); /* ▼ スマホでも大きすぎないよう可変に */
+    height: clamp(150px, 30vw, 300px);
 }
 </style>
 </head>
@@ -57,6 +68,7 @@ canvas{
 <div id="game">
     <canvas id="canvas" width="1280" height="720"></canvas>
     <div id="timer">0.0秒</div>
+    <!-- 〇×表示用のレイヤー -->
     <div id="overlay">
         <img id="result-img" src="" alt="演出画像">
     </div>
@@ -68,18 +80,32 @@ const series = [
         name:"iwakisan",
         answer:{ x:241, y:108, width:744, height:175 },
         images:[
-            "slow/iwakisan1.jpg", "slow/iwakisan2.jpg", "slow/iwakisan3.jpg", "slow/iwakisan4.jpg",
-            "slow/iwakisan5.jpg", "slow/iwakisan6.jpg", "slow/iwakisan7.jpg", "slow/iwakisan8.jpg",
-            "slow/iwakisan9.jpg", "slow/iwakisan10.jpg", "slow/iwakisan11.jpg"
+            "slow/iwakisan1.jpg",
+            "slow/iwakisan2.jpg", 
+            "slow/iwakisan3.jpg", 
+            "slow/iwakisan4.jpg",
+            "slow/iwakisan5.jpg", 
+            "slow/iwakisan6.jpg", 
+            "slow/iwakisan7.jpg",
+            "slow/iwakisan8.jpg",
+            "slow/iwakisan9.jpg",
+            "slow/iwakisan10.jpg", 
+            "slow/iwakisan11.jpg"
         ]
     },
     {
         name:"iwakiyamajinjya",
         answer:{ x:467, y:448, width:794, height:153 },
         images:[
-            "slow/iwakiyamajinjya1.jpg", "slow/iwakiyamajinjya2.jpg", "slow/iwakiyamajinjya3.jpg",
-            "slow/iwakiyamajinjya4.jpg", "slow/iwakiyamajinjya5.jpg", "slow/iwakiyamajinjya6.jpg",
-            "slow/iwakiyamajinjya7.jpg", "slow/iwakiyamajinjya8.jpg", "slow/iwakiyamajinjya9.jpg",
+            "slow/iwakiyamajinjya1.jpg", 
+            "slow/iwakiyamajinjya2.jpg", 
+            "slow/iwakiyamajinjya3.jpg",
+            "slow/iwakiyamajinjya4.jpg", 
+            "slow/iwakiyamajinjya5.jpg", 
+            "slow/iwakiyamajinjya6.jpg",
+            "slow/iwakiyamajinjya7.jpg", 
+            "slow/iwakiyamajinjya8.jpg", 
+            "slow/iwakiyamajinjya9.jpg",
             "slow/iwakiyamajinjya10.jpg"
         ]
     },
@@ -87,54 +113,96 @@ const series = [
         name:"yoruhirosakijou",
         answer:{ x:1, y:506, width:1277, height:212 },
         images:[
-            "slow/yoruhirosakijou0.jpg", "slow/yoruhirosakijou1.jpg", "slow/yoruhirosakijou2.jpg",
-            "slow/yoruhirosakijou3.jpg", "slow/yoruhirosakijou4.jpg", "slow/yoruhirosakijou5.jpg",
-            "slow/yoruhirosakijou6.jpg", "slow/yoruhirosakijou7.jpg", "slow/yoruhirosakijou8.jpg",
-            "slow/yoruhirosakijou9.jpg", "slow/yoruhirosakijou10.jpg"
+            "slow/yoruhirosakijou0.jpg", 
+            "slow/yoruhirosakijou1.jpg", 
+            "slow/yoruhirosakijou2.jpg",
+            "slow/yoruhirosakijou3.jpg", 
+            "slow/yoruhirosakijou4.jpg", 
+            "slow/yoruhirosakijou5.jpg",
+            "slow/yoruhirosakijou6.jpg", 
+            "slow/yoruhirosakijou7.jpg", 
+            "slow/yoruhirosakijou8.jpg",
+            "slow/yoruhirosakijou9.jpg", 
+            "slow/yoruhirosakijou10.jpg"
         ]
     },
     {
         name:"hashifune",
         answer:{ x:122, y:167, width:852, height:437 },
         images:[
-            "slow/hashifune0.jpg", "slow/hashifune1.jpg", "slow/hashifune2.jpg", "slow/hashifune3.jpg",
-            "slow/hashifune4.jpg", "slow/hashifune5.jpg", "slow/hashifune6.jpg", "slow/hashifune7.jpg",
-            "slow/hashifune8.jpg", "slow/hashifune9.jpg"
+            "slow/hashifune0.jpg", 
+            "slow/hashifune1.jpg", 
+            "slow/hashifune2.jpg", 
+            "slow/hashifune3.jpg",
+            "slow/hashifune4.jpg", 
+            "slow/hashifune5.jpg", 
+            "slow/hashifune6.jpg",
+            "slow/hashifune7.jpg",
+            "slow/hashifune8.jpg", 
+            "slow/hashifune9.jpg"
         ]
     },
     {
         name:"otemon",
         answer:{ x:1, y:195, width:356, height:241 },
         images:[
-            "slow/otemon0.jpg", "slow/otemon1.jpg", "slow/otemon2.jpg", "slow/otemon3.jpg",
-            "slow/otemon4.jpg", "slow/otemon5.jpg", "slow/otemon6.jpg", "slow/otemon7.jpg",
-            "slow/otemon8.jpg", "slow/otemon9.jpg"
+            "slow/otemon0.jpg", 
+            "slow/otemon1.jpg", 
+            "slow/otemon2.jpg", 
+            "slow/otemon3.jpg",
+            "slow/otemon4.jpg", 
+            "slow/otemon5.jpg", 
+            "slow/otemon6.jpg", 
+            "slow/otemon7.jpg",
+            "slow/otemon8.jpg", 
+            "slow/otemon9.jpg"
         ]
     },
     {
         name:"sakurasabun",
         answer:{ x:1, y:100, width:682, height:465 },
         images:[
-            "slow/sakurasabun0.jpg", "slow/sakurasabun1.jpg", "slow/sakurasabun2.jpg", "slow/sakurasabun3.jpg",
-            "slow/sakurasabun4.jpg", "slow/sakurasabun5.jpg", "slow/sakurasabun6.jpg", "slow/sakurasabun7.jpg",
-            "slow/sakurasabun8.jpg", "slow/sakurasabun9.jpg"
+            "slow/sakurasabun0.jpg", 
+            "slow/sakurasabun1.jpg", 
+            "slow/sakurasabun2.jpg", 
+            "slow/sakurasabun3.jpg",
+            "slow/sakurasabun4.jpg", 
+            "slow/sakurasabun5.jpg", 
+            "slow/sakurasabun6.jpg", 
+            "slow/sakurasabun7.jpg",
+            "slow/sakurasabun8.jpg", 
+            "slow/sakurasabun9.jpg"
         ]
     },
     {
         name:"hirosakijou",
         answer:{ x:560, y:360, width:290, height:200 },
         images:[
-            "slow/hirosakijou1.jpg", "slow/hirosakijou2.jpg", "slow/hirosakijou3.jpg", "slow/hirosakijou4.jpg",
-            "slow/hirosakijou5.jpg", "slow/hirosakijou6.jpg", "slow/hirosakijou7.jpg", "slow/hirosakijou8.jpg",
-            "slow/hirosakijou9.jpg", "slow/hirosakijou10.jpg", "slow/hirosakijou11.jpg"
+            "slow/hirosakijou1.jpg", 
+            "slow/hirosakijou2.jpg", 
+            "slow/hirosakijou3.jpg", 
+            "slow/hirosakijou4.jpg",
+            "slow/hirosakijou5.jpg", 
+            "slow/hirosakijou6.jpg", 
+            "slow/hirosakijou7.jpg", 
+            "slow/hirosakijou8.jpg",
+            "slow/hirosakijou9.jpg", 
+            "slow/hirosakijou10.jpg", 
+            "slow/hirosakijou11.jpg"
         ]
     },
     {
         name:"hunesabun",
         answer:{ x:245, y:352, width:113, height:125 },
         images:[
-            "slow/hunesabun1.jpg", "slow/hunesabun2.jpg", "slow/hunesabun3.jpg", "slow/hunesabun4.jpg",
-            "slow/hunesabun5.jpg", "slow/hunesabun6.jpg", "slow/hunesabun7.jpg", "slow/hunesabun8.jpg",
+            "slow/hunesabun1.jpg", 
+            "slow/hunesabun2.jpg", 
+            "slow/hunesabun3.jpg", 
+            "slow/hunesabun4.jpg",
+            "slow/hunesabun5.jpg", 
+            "slow/hunesabun6.jpg", 
+            "slow/hunesabun7.jpg", 
+            "slow/hunesabun8.jpg",
             "slow/hunesabun9.jpg"
         ]
     },
@@ -142,54 +210,88 @@ const series = [
         name:"ringokouen",
         answer:{ x:113, y:469, width:1162, height:187 },
         images:[
-            "slow/ringokouen0.jpg", "slow/ringokouen1.jpg", "slow/ringokouen2.jpg", "slow/ringokouen3.jpg",
-            "slow/ringokouen4.jpg", "slow/ringokouen5.jpg", "slow/ringokouen6.jpg", "slow/ringokouen7.jpg",
-            "slow/ringokouen8.jpg", "slow/ringokouen9.jpg"
+            "slow/ringokouen0.jpg", 
+            "slow/ringokouen1.jpg", 
+            "slow/ringokouen2.jpg", 
+            "slow/ringokouen3.jpg",
+            "slow/ringokouen4.jpg", 
+            "slow/ringokouen5.jpg", 
+            "slow/ringokouen6.jpg", 
+            "slow/ringokouen7.jpg",
+            "slow/ringokouen8.jpg", 
+            "slow/ringokouen9.jpg"
         ]
     },
     {
         name:"jinbutsusabun",
         answer:{ x:677, y:326, width:36, height:43 },
         images:[
-            "slow/jinbutsusabun0.jpg", "slow/jinbutsusabun1.jpg", "slow/jinbutsusabun2.jpg", "slow/jinbutsusabun3.jpg",
-            "slow/jinbutsusabun4.jpg", "slow/jinbutsusabun5.jpg", "slow/jinbutsusabun6.jpg", "slow/jinbutsusabun7.jpg",
-            "slow/jinbutsusabun8.jpg", "slow/jinbutsusabun9.jpg"
+            "slow/jinbutsusabun0.jpg", 
+            "slow/jinbutsusabun1.jpg", 
+            "slow/jinbutsusabun2.jpg", 
+            "slow/jinbutsusabun3.jpg",
+            "slow/jinbutsusabun4.jpg", 
+            "slow/jinbutsusabun5.jpg", 
+            "slow/jinbutsusabun6.jpg", 
+            "slow/jinbutsusabun7.jpg",
+            "slow/jinbutsusabun8.jpg", 
+            "slow/jinbutsusabun9.jpg"
         ]
     },
     {
         name:"kankoukansabun",
         answer:{ x:624, y:149, width:110, height:63 },
         images:[
-            "slow/kankoukansabun0.jpg", "slow/kankoukansabun1.jpg", "slow/kankoukansabun2.jpg", "slow/kankoukansabun3.jpg",
-            "slow/kankoukansabun4.jpg", "slow/kankoukansabun5.jpg", "slow/kankoukansabun6.jpg", "slow/kankoukansabun7.jpg",
-            "slow/kankoukansabun8.jpg", "slow/kankoukansabun9.jpg"
+            "slow/kankoukansabun0.jpg",
+            "slow/kankoukansabun1.jpg",
+            "slow/kankoukansabun2.jpg", 
+            "slow/kankoukansabun3.jpg",
+            "slow/kankoukansabun4.jpg", 
+            "slow/kankoukansabun5.jpg", 
+            "slow/kankoukansabun6.jpg", 
+            "slow/kankoukansabun7.jpg",
+            "slow/kankoukansabun8.jpg", 
+            "slow/kankoukansabun9.jpg"
         ]
     },
     {
         name:"tachineputasabun",
         answer:{ x:369, y:221, width:103, height:39 },
         images:[
-            "slow/tachineputasabun0.jpg", "slow/tachineputasabun1.jpg", "slow/tachineputasabun2.jpg", "slow/tachineputasabun3.jpg",
-            "slow/tachineputasabun4.jpg", "slow/tachineputasabun5.jpg", "slow/tachineputasabun6.jpg", "slow/tachineputasabun7.jpg",
-            "slow/tachineputasabun8.jpg", "slow/tachineputasabun9.jpg"
+            "slow/tachineputasabun0.jpg", 
+            "slow/tachineputasabun1.jpg", 
+            "slow/tachineputasabun2.jpg", 
+            "slow/tachineputasabun3.jpg",
+            "slow/tachineputasabun4.jpg", 
+            "slow/tachineputasabun5.jpg", 
+            "slow/tachineputasabun6.jpg", 
+            "slow/tachineputasabun7.jpg",
+            "slow/tachineputasabun8.jpg", 
+            "slow/tachineputasabun9.jpg"
         ]
     },
     {
         name:"lightswordsabun",
         answer:{ x:319, y:36, width:689, height:61 },
         images:[
-            "slow/lightswordsabun0.jpg", "slow/lightswordsabun1.jpg", "slow/lightswordsabun2.jpg", "slow/lightswordsabun3.jpg",
-            "slow/lightswordsabun4.jpg", "slow/lightswordsabun5.jpg", "slow/lightswordsabun6.jpg", "slow/lightswordsabun7.jpg",
-            "slow/lightswordsabun8.jpg", "slow/lightswordsabun9.jpg"
+            "slow/lightswordsabun0.jpg", 
+            "slow/lightswordsabun1.jpg", 
+            "slow/lightswordsabun2.jpg", 
+            "slow/lightswordsabun3.jpg",
+            "slow/lightswordsabun4.jpg", 
+            "slow/lightswordsabun5.jpg", 
+            "slow/lightswordsabun6.jpg", 
+            "slow/lightswordsabun7.jpg",
+            "slow/lightswordsabun8.jpg", 
+            "slow/lightswordsabun9.jpg"
         ]
     },
     {
         name:"taigasabun",
-        time:50,
         answer:{
             x:856,
             y:292,
-            width:61,                      //ok
+            width:61,
             height:71
         },
         images:[
@@ -202,7 +304,7 @@ const series = [
             "slow/taigasabun6.jpg",
             "slow/taigasabun7.jpg",
             "slow/taigasabun8.jpg",
-            "slow/taigasabun9.jpg",
+            "slow/taigasabun9.jpg"
         ]
     }
 ];
@@ -295,7 +397,6 @@ async function playSeries(data){
     }
     drawImage(current);
     
-    // 初回画像の表示待ち（正解されたら中断）
     for(let t=0; t<2000; t+=50) {
         if(isCorrect) break;
         await wait(50);
@@ -307,7 +408,6 @@ async function playSeries(data){
         let next = await loadImage(data.images[i]);
         if (!next) continue;
         
-        // クロスフェードアニメーション
         for(let a=0; a<=100; a+=2){
             if(isCorrect) break;
             
@@ -363,11 +463,11 @@ async function startGame(){
             rank = "B";
         }
         
-        timer.innerHTML = `終了！<br>平均: ${avgTime.toFixed(1)}秒<br>評価: ${rank}<br><span style="font-size:20px; color:#aaa;">(画面タップで選択画面へ戻る)</span>`;
-        timer.style.fontSize = "32px";
+        timer.innerHTML = `終了！<br>平均: ${avgTime.toFixed(1)}秒<br>評価: ${rank}<br><span style="font-size:18px; color:#aaa;">(画面タップで選択画面へ戻る)</span>`;
+        timer.style.fontSize = "clamp(20px, 3.5vw, 32px)";
     } else {
-        timer.innerHTML = `終了 (正解なし)<br><span style="font-size:20px; color:#aaa;">(画面タップで選択画面へ戻る)</span>`;
-        timer.style.fontSize = "32px";
+        timer.innerHTML = `終了 (正解なし)<br><span style="font-size:18px; color:#aaa;">(画面タップで選択画面へ戻る)</span>`;
+        timer.style.fontSize = "clamp(20px, 3.5vw, 32px)";
     }
 
     currentAnswer = null;
@@ -383,6 +483,7 @@ canvas.addEventListener("click", async (e)=>{
         return;
     }
     
+    // ▼ スマホなどの表示サイズと内部の1280x720のズレを自動計算して正確な座標を算出
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;

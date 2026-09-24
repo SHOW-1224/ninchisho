@@ -8,6 +8,10 @@ body {
     font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
     color: white;
     position: relative;
+    /* ▼ スマホ・タブレットでスクロールや勝手なズームが起きないように追加 */
+    overscroll-behavior: none;
+    touch-action: manipulation;
+    overflow: hidden;
 }
 
 body::before {
@@ -25,21 +29,27 @@ body::before {
     top: 40px;
     width: 100%;
     text-align: center;
-    font-size: clamp(40px, 8vw, 100px);
+    /* ▼ スマホの縦長画面でもタイトルがはみ出さないように調整 */
+    font-size: clamp(32px, 7vw, 100px);
     text-shadow: 2px 2px 8px rgba(0,0,0,0.8);
     z-index: 2;
+    padding: 0 10px;
+    box-sizing: border-box;
 }
 
 .overlay {
     text-align: center;
     background: rgba(0,0,0,0.6);
-    padding: 40px;
+    padding: 30px 40px;
     border-radius: 20px;
     cursor: pointer;
     z-index: 2;
     position: relative;
     animation: blink 1.2s infinite;
     transition: 0.2s;
+    /* ▼ スマホでタップしやすくなるよう少し余白と最大幅を持たせる */
+    max-width: 80%;
+    box-sizing: border-box;
 }
 
 .overlay:hover {
@@ -53,13 +63,14 @@ body::before {
 
 h2 {
     margin: 0;
-    font-size: 28px;
+    font-size: clamp(20px, 5vw, 28px); /* ▼ 画面幅に合わせて文字サイズを可変に */
     text-shadow: 1px 1px 4px rgba(0,0,0,0.8);
 }
 
 p {
     margin-top: 10px;
     opacity: 0.9;
+    font-size: clamp(14px, 3.5vw, 16px); /* ▼ 小さい画面でも見やすいように調整 */
 }
 
 @keyframes blink {

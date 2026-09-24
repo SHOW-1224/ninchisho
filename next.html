@@ -2,6 +2,8 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<!-- ▼ スマホやタブレットで画面が勝手に縮小・拡大しないようにするための必須設定 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>脳トレ!!弘前観光</title>
 <style>
 body {
@@ -13,6 +15,10 @@ body {
     background: #111;
     color: white;
     font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", Meiryo, sans-serif;
+    /* ▼ スマホでのスクロールや勝手なズームを防ぐ */
+    overscroll-behavior: none;
+    touch-action: manipulation;
+    overflow: hidden;
 }
 
 .container {

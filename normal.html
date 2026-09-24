@@ -2,32 +2,45 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
+<!-- ▼ スマホやタブレットで画面が勝手に縮小・拡大されないようにする必須設定 -->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>間違い探し</title>
 <style>
 body{
-    margin:0;
-    background:black;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:100vh;
+    margin: 0;
+    background: black;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+    overscroll-behavior: none;
+    touch-action: manipulation;
 }
 #game{
-    position:relative;
+    position: relative;
+    width: 100%;
+    max-width: 1280px;
+    aspect-ratio: 16 / 9; /* ▼ 常に16:9の綺麗な比率を維持する */
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 canvas{
-    width:1280px;
-    height:720px;
+    width: 100%;
+    height: 100%;
+    object-fit: contain; /* ▼ 比率を崩さずに画面内に収める */
+    display: block;
 }
 #timer{
-    position:absolute;
-    top:20px;
-    left:20px;
-    color:white;
-    font-size:50px;
-    font-weight:bold;
+    position: absolute;
+    top: 3%;
+    left: 3%;
+    color: white;
+    font-size: clamp(24px, 4vw, 50px);
+    font-weight: bold;
     text-shadow: 0 0 10px black;
-    z-index:10;
+    z-index: 10;
     line-height: 1.2;
 }
 /* クイズ風の正解・不正解エフェクト用 */
@@ -35,8 +48,8 @@ canvas{
     position: absolute;
     top: 0;
     left: 0;
-    width: 1280px;
-    height: 720px;
+    width: 100%;
+    height: 100%;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -46,8 +59,8 @@ canvas{
     transition: opacity 0.2s ease;
 }
 #overlay img {
-    width: 300px; /* 画像のサイズ */
-    height: 300px;
+    width: clamp(150px, 30vw, 300px); /* ▼ スマホでも大きすぎないよう可変に */
+    height: clamp(150px, 30vw, 300px);
 }
 </style>
 </head>
@@ -92,7 +105,7 @@ const series = [
         answer:{
             x:245,
             y:352,
-            width:113,                       //ok
+            width:113,                         //ok
             height:125
         },
         images:[
@@ -113,7 +126,7 @@ const series = [
         answer:{
             x:113,
             y:469,
-            width:1162,                      //ok
+            width:1162,                        //ok
             height:187
         },
         images:[
@@ -135,7 +148,7 @@ const series = [
         answer:{
             x:624,
             y:149,
-            width:110,                      //ok
+            width:110,                       //ok
             height:63
         },
         images:[
@@ -157,7 +170,7 @@ const series = [
         answer:{
             x:369,
             y:221,
-            width:103,                      //ok
+            width:103,                       //ok
             height:39
         },
         images:[
@@ -179,7 +192,7 @@ const series = [
         answer:{
             x:856,
             y:292,
-            width:61,                      //ok
+            width:61,                       //ok
             height:71
         },
         images:[
@@ -268,35 +281,32 @@ function showResultEffect(isMaru) {
         isAnimating = true;
         resultImg.src = isMaru ? "UIimages/maru.png" : "UIimages/batsu.png";
         
-        // 音声ONのときだけ効果音を再生
         if (isAudioOn) {
             const sound = isMaru ? correctSound : incorrectSound;
             sound.currentTime = 0;
             sound.play().catch(e => console.log("音声再生エラー:", e));
         }
 
-        // フェードイン
         overlay.style.opacity = "1";
         
-        // 1秒後にフェードアウト
         setTimeout(() => {
             overlay.style.opacity = "0";
             setTimeout(() => {
                 isAnimating = false;
                 resolve();
-            }, 200); // CSSのtransition（0.2s）を待つ
+            }, 200); 
         }, 300);
     });
 }
 
 async function playSeries(data){
     currentAnswer = data.answer;
-    isCorrect = false; // シリーズ開始時に初期化
+    isCorrect = false; 
     let remain = data.time;
     let timeUp = false;
     timer.textContent = remain;
     
-    const startTime = Date.now(); // 問題開始時刻を記録
+    const startTime = Date.now(); 
 
     const timerID = setInterval(()=>{
         if(isCorrect) {
@@ -356,7 +366,6 @@ async function playSeries(data){
     }
     clearInterval(timerID);
 
-    // 正解した場合のみ、かかった時間（秒）を記録
     if(isCorrect) {
         const elapsedTime = (Date.now() - startTime) / 1000;
         scoreTimes.push(elapsedTime);
@@ -373,12 +382,11 @@ function shuffleArray(array) {
 async function startGame(){
     scoreTimes = [];
     shuffleArray(series);
-    const selectedSeries=series.slice(0, 10); // 登録数に合わせて調整（例では最大3問）
+    const selectedSeries=series.slice(0, 10); 
     for(const data of selectedSeries){
         await playSeries(data);
     }
 
-    // 終了時のスコア・ランク計算
     if(scoreTimes.length > 0) {
         const totalTime = scoreTimes.reduce((sum, time) => sum + time, 0);
         const avgTime = totalTime / scoreTimes.length;
@@ -392,15 +400,15 @@ async function startGame(){
             rank = "B";
         }
         
-        timer.innerHTML = `終了！<br>平均: ${avgTime.toFixed(1)}秒<br>評価: ${rank}<br><span style="font-size:20px; color:#aaa;">(画面タップで選択画面へ戻る)</span>`;
-        timer.style.fontSize = "32px";
+        timer.innerHTML = `終了！<br>平均: ${avgTime.toFixed(1)}秒<br>評価: ${rank}<br><span style="font-size:18px; color:#aaa;">(画面タップで選択画面へ戻る)</span>`;
+        timer.style.fontSize = "clamp(20px, 3.5vw, 32px)";
     } else {
-        timer.innerHTML = `終了 (正解なし)<br><span style="font-size:20px; color:#aaa;">(画面タップで選択画面へ戻る)</span>`;
-        timer.style.fontSize = "32px";
+        timer.innerHTML = `終了 (正解なし)<br><span style="font-size:18px; color:#aaa;">(画面タップで選択画面へ戻る)</span>`;
+        timer.style.fontSize = "clamp(20px, 3.5vw, 32px)";
     }
 
     currentAnswer = null;
-    isGameOver = true; // 結果表示後にゲームオーバーフラグをONにする
+    isGameOver = true; 
 }
 
 canvas.addEventListener("click", async (e)=>{
@@ -411,9 +419,15 @@ canvas.addEventListener("click", async (e)=>{
     if(!currentAnswer || isCorrect || isAnimating){
         return;
     }
+
+    // ▼ スマホなどの表示サイズと内部の1280x720のズレを自動計算して正確な座標を算出
     const rect = canvas.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
+    const scaleX = canvas.width / rect.width;
+    const scaleY = canvas.height / rect.height;
+
+    const x = (e.clientX - rect.left) * scaleX;
+    const y = (e.clientY - rect.top) * scaleY;
+
     if(
         x >= currentAnswer.x &&
         x <= currentAnswer.x + currentAnswer.width &&
