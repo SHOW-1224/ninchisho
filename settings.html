@@ -15,8 +15,8 @@
     <div class="section">
         <div class="label">音声</div>
         <!-- settings.html のリンクまたはボタン部分 -->
-        <a class="btn" href="#" onclick="setAudio('on')">音ON</a>
-        <a class="btn" href="#" onclick="setAudio('off')">音OFF</a>
+        <a class="btn" href="#" onclick="setAudio('on'); return false;">音ON</a>
+        <a class="btn" href="#" onclick="setAudio('off'); return false;">音OFF</a>
 
         <script>
         function setAudio(status) {
