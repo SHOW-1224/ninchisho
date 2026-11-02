@@ -12,16 +12,15 @@ body{
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
+    min-height: 100vh;
     overflow: hidden;
     overscroll-behavior: none;
     touch-action: manipulation;
 }
 #game{
     position: relative;
-    width: 100%;
-    max-width: 1280px;
-    aspect-ratio: 16 / 9; /* ▼ 常に16:9の綺麗な比率を維持する */
+    width: 100vw;
+    height: 100vh;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -29,7 +28,7 @@ body{
 canvas{
     width: 100%;
     height: 100%;
-    object-fit: contain; /* ▼ 比率を崩さずに画面内に収める */
+    object-fit: contain; /* ▼ 比率を崩さずに画面内に収める（余白は自動調整） */
     display: block;
 }
 #timer{
@@ -43,6 +42,100 @@ canvas{
     z-index: 10;
     line-height: 1.2;
 }
+
+/* 三本線メニューボタン */
+#menu-btn {
+    position: absolute;
+    top: 3%;
+    right: 3%;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: 2px solid white;
+    border-radius: 8px;
+    width: clamp(40px, 6vw, 60px);
+    height: clamp(40px, 6vw, 60px);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: clamp(4px, 0.8vw, 7px);
+    cursor: pointer;
+    z-index: 25;
+    box-shadow: 0 0 5px black;
+}
+#menu-btn:active {
+    background: rgba(255, 255, 255, 0.3);
+}
+/* 三本線のバー */
+.menu-bar {
+    width: 60%;
+    height: 3px;
+    background: white;
+    border-radius: 2px;
+}
+
+/* モーダルメニュー */
+#menu-modal {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 30;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease;
+}
+#menu-modal.active {
+    opacity: 1;
+    pointer-events: auto;
+}
+.menu-content {
+    background: #222;
+    border: 3px solid white;
+    border-radius: 16px;
+    padding: 30px;
+    text-align: center;
+    color: white;
+    width: 80%;
+    max-width: 400px;
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+.menu-content h2 {
+    margin-top: 0;
+    font-size: clamp(20px, 3vw, 28px);
+}
+.menu-btn-item {
+    display: block;
+    width: 100%;
+    padding: 12px;
+    margin: 15px 0;
+    font-size: clamp(16px, 2.5vw, 20px);
+    font-weight: bold;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+}
+.btn-toggle {
+    background: #4CAF50;
+    color: white;
+}
+.btn-toggle.off {
+    background: #f44336;
+}
+.btn-exit {
+    background: #555;
+    color: white;
+}
+.btn-close {
+    background: #ff9800;
+    color: white;
+}
+
 /* クイズ風の正解・不正解エフェクト用 */
 #overlay {
     position: absolute;
@@ -68,6 +161,24 @@ canvas{
 <div id="game">
     <canvas id="canvas" width="1280" height="720"></canvas>
     <div id="timer">80</div>
+    
+    <!-- 三本線メニューボタン -->
+    <div id="menu-btn">
+        <div class="menu-bar"></div>
+        <div class="menu-bar"></div>
+        <div class="menu-bar"></div>
+    </div>
+
+    <!-- メニューモーダル -->
+    <div id="menu-modal">
+        <div class="menu-content">
+            <h2>ポーズメニュー</h2>
+            <button id="audio-toggle-btn" class="menu-btn-item btn-toggle">音声: ON</button>
+            <button id="exit-btn" class="menu-btn-item btn-exit">選択画面へ戻る</button>
+            <button id="close-menu-btn" class="menu-btn-item btn-close">ゲームに戻る</button>
+        </div>
+    </div>
+
     <!-- 〇×表示用のレイヤー -->
     <div id="overlay">
         <img id="result-img" src="" alt="演出画像">
@@ -105,7 +216,7 @@ const series = [
         answer:{
             x:245,
             y:352,
-            width:113,                         //ok
+            width:113,                                   //ok
             height:125
         },
         images:[
@@ -126,7 +237,7 @@ const series = [
         answer:{
             x:113,
             y:469,
-            width:1162,                        //ok
+            width:1162,                                   //ok
             height:187
         },
         images:[
@@ -192,7 +303,7 @@ const series = [
         answer:{
             x:856,
             y:292,
-            width:61,                       //ok
+            width:61,                        //ok
             height:71
         },
         images:[
@@ -207,6 +318,94 @@ const series = [
             "normal/taigasabun8.jpg",
             "normal/taigasabun9.jpg",
         ]
+    },
+     {
+        name:"denkisabun",
+        time:50,
+        answer:{
+            x:1060,
+            y:60,                        //ok
+            width:45,                        //ok
+            height:16                        
+        },
+        images:[
+            "normal/denkisabun0.jpg",
+            "normal/denkisabun1.jpg",
+            "normal/denkisabun2.jpg",
+            "normal/denkisabun3.jpg",
+            "normal/denkisabun4.jpg",
+            "normal/denkisabun5.jpg",
+            "normal/denkisabun6.jpg",
+            "normal/denkisabun7.jpg",
+            "normal/denkisabun8.jpg",
+            "normal/denkisabun9.jpg",
+        ]
+    },
+    {
+        name:"kisabun",
+        time:50,
+        answer:{
+            x:701,
+            y:189,
+            width:10,                        //ok
+            height:15                    
+        },
+        images:[
+            "normal/kisabun0.jpg",
+            "normal/kisabun1.jpg",
+            "normal/kisabun2.jpg",
+            "normal/kisabun3.jpg",
+            "normal/kisabun4.jpg",
+            "normal/kisabun5.jpg",
+            "normal/kisabun6.jpg",
+            "normal/kisabun7.jpg",
+            "normal/kisabun8.jpg",
+            "normal/kisabun9.jpg",
+        ]
+    },
+    {
+        name:"sanzusabun",
+        time:50,
+        answer:{
+            x:618,
+            y:398,
+            width:69,                        //ok
+            height:84                        
+        },
+        images:[
+            "normal/sanzusabun0.jpg",
+            "normal/sanzusabun1.jpg",
+            "normal/sanzusabun2.jpg",
+            "normal/sanzusabun3.jpg",
+            "normal/sanzusabun4.jpg",
+            "normal/sanzusabun5.jpg",
+            "normal/sanzusabun6.jpg",
+            "normal/sanzusabun7.jpg",
+            "normal/sanzusabun8.jpg",
+            "normal/sanzusabun9.jpg",
+        ]
+    },
+    {
+        name:"tsukisabun",
+        time:50,
+        answer:{
+            x:836,
+            y:79,
+            width:189,                        //ok
+            height:134
+        },
+        images:[
+            "normal/tsukisabun0.jpg",
+            "normal/tsukisabun1.jpg",
+            "normal/tsukisabun2.jpg",
+            "normal/tsukisabun3.jpg",
+            "normal/tsukisabun4.jpg",
+            "normal/tsukisabun5.jpg",
+            "normal/tsukisabun6.jpg",
+            "normal/tsukisabun7.jpg",
+            "normal/tsukisabun8.jpg",
+            "normal/tsukisabun9.jpg",
+        ]
     }
 ];
 
@@ -216,35 +415,60 @@ const timer = document.getElementById("timer");
 const overlay = document.getElementById("overlay");
 const resultImg = document.getElementById("result-img");
 
+const menuBtn = document.getElementById("menu-btn");
+const menuModal = document.getElementById("menu-modal");
+const audioToggleBtn = document.getElementById("audio-toggle-btn");
+const exitBtn = document.getElementById("exit-btn");
+const closeMenuBtn = document.getElementById("close-menu-btn");
+
 // 効果音用の音声オブジェクトを作成
 const correctSound = new Audio("sounds/correct.mp3");
 const incorrectSound = new Audio("sounds/incorrect.mp3");
 
 // ブラウザの設定から音声設定を取得
-const audioSetting = localStorage.getItem("audioSetting") || "on";
-const isAudioOn = (audioSetting === "on");
+let audioSetting = localStorage.getItem("audioSetting") || "on";
+let isAudioOn = (audioSetting === "on");
+
+// 音声ボタンの初期表示設定
+function updateAudioButton() {
+    if (isAudioOn) {
+        audioToggleBtn.textContent = "音声: ON";
+        audioToggleBtn.classList.remove("off");
+    } else {
+        audioToggleBtn.textContent = "音声: OFF";
+        audioToggleBtn.classList.add("off");
+    }
+}
+updateAudioButton();
 
 let currentAnswer = null;
 let isCorrect = false;      // 正解フラグ
 let isAnimating = false;    // 演出中フラグ
 let scoreTimes = [];        // 正解にかかった時間を保存する配列
 let isGameOver = false;     // ゲーム終了フラグ
+let isPaused = false;       // メニューが開いている時の一時停止フラグ
 
-// 正解されたら即座に終了する拡張wait関数
+// ポーズ中やゲームオーバーを考慮した待機関数
 function wait(ms){
     return new Promise(resolve => {
-        const timeout = setTimeout(() => {
-            clearInterval(checkInterval);
-            resolve();
-        }, ms);
-        
-        const checkInterval = setInterval(() => {
-            if (isCorrect) {
-                clearTimeout(timeout);
-                clearInterval(checkInterval);
+        const start = Date.now();
+        const check = () => {
+            if (isGameOver) {
                 resolve();
+                return;
             }
-        }, 30);
+            if (isPaused) {
+                setTimeout(check, 100);
+                return;
+            }
+            const elapsed = Date.now() - start;
+            if (elapsed >= ms) {
+                resolve();
+            } else {
+                setTimeout(check, Math.min(50, ms - elapsed));
+            }
+        };
+        setTimeout(check, Math.min(50, ms));
     });
 }
 
@@ -254,11 +478,16 @@ function loadImage(src){
         img.onload = ()=>{
             resolve(img);
         };
+        img.onerror = () => {
+            console.error("画像読み込みエラー: " + src);
+            resolve(null);
+        };
         img.src = src;
     });
 }
 
 function drawImage(img){
+    if(!img) return;
     ctx.clearRect(
         0,
         0,
@@ -309,33 +538,41 @@ async function playSeries(data){
     const startTime = Date.now(); 
 
     const timerID = setInterval(()=>{
-        if(isCorrect) {
+        if(isCorrect || isGameOver) {
             clearInterval(timerID);
             return;
         }
+        if(isPaused) return; // ポーズ中はタイマーを減らさない
+
         remain--;
         timer.textContent = remain;
         if(remain <= 0){
             timeUp = true;
             clearInterval(timerID);
         }
-    },1000);
+    }, 1000);
 
-    let current = await loadImage(
-        data.images[0]
-    );
+    let current = await loadImage(data.images[0]);
+    if (!current) {
+        clearInterval(timerID);
+        return;
+    }
     drawImage(current);
-    await wait(2000);
+    
+    for(let t=0; t<2000; t+=50) {
+        if(isCorrect || isGameOver) break;
+        await wait(50);
+    }
     
     for(let i=1; i<data.images.length; i++){
-        if(timeUp || isCorrect){
+        if(timeUp || isCorrect || isGameOver){
             break;
         }
-        let next = await loadImage(
-            data.images[i]
-        );
+        let next = await loadImage(data.images[i]);
+        if (!next) continue;
+
         for(let a=0; a<=100; a++){
-            if(isCorrect) break;
+            if(isCorrect || isGameOver) break;
             
             ctx.clearRect(
                 0,
@@ -362,7 +599,11 @@ async function playSeries(data){
             await wait(30);
         }
         current = next;
-        await wait(2000);
+
+        for(let t=0; t<2000; t+=50) {
+            if(isCorrect || isGameOver) break;
+            await wait(50);
+        }
     }
     clearInterval(timerID);
 
@@ -382,10 +623,13 @@ function shuffleArray(array) {
 async function startGame(){
     scoreTimes = [];
     shuffleArray(series);
-    const selectedSeries=series.slice(0, 10); 
+    const selectedSeries = series.slice(0, 10); 
     for(const data of selectedSeries){
+        if(isGameOver) break;
         await playSeries(data);
     }
+
+    if(isGameOver && scoreTimes.length === 0 && !isPaused) return;
 
     if(scoreTimes.length > 0) {
         const totalTime = scoreTimes.reduce((sum, time) => sum + time, 0);
@@ -409,14 +653,38 @@ async function startGame(){
 
     currentAnswer = null;
     isGameOver = true; 
+    menuBtn.style.display = "none";
 }
 
+// --- メニュー操作に関するイベントリスナー ---
+menuBtn.addEventListener("click", () => {
+    if (isGameOver) return;
+    isPaused = true;
+    menuModal.classList.add("active");
+});
+
+closeMenuBtn.addEventListener("click", () => {
+    menuModal.classList.remove("active");
+    isPaused = false;
+});
+
+audioToggleBtn.addEventListener("click", () => {
+    isAudioOn = !isAudioOn;
+    localStorage.setItem("audioSetting", isAudioOn ? "on" : "off");
+    updateAudioButton();
+});
+
+exitBtn.addEventListener("click", () => {
+    window.location.href = "select.html";
+});
+
+// キャンバスをクリックした時の判定
 canvas.addEventListener("click", async (e)=>{
     if(isGameOver){
         window.location.href = "select.html";
         return;
     }
-    if(!currentAnswer || isCorrect || isAnimating){
+    if(!currentAnswer || isCorrect || isAnimating || isPaused){
         return;
     }
 
